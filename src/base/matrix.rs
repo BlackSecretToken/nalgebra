@@ -412,23 +412,9 @@ impl<N: Scalar, R: Dim, C: Dim, S: Storage<N, R, C>> Matrix<N, R, C, S> {
     }
 
     /// Returns a matrix containing the result of `f` applied to each of its entries.
-    #[inline]
     pub fn map<N2: Scalar, F: FnMut(N) -> N2>(&self, mut f: F) -> MatrixMN<N2, R, C>
-    where DefaultAllocator: Allocator<N2, R, C> {
-        let (nrows, ncols) = self.data.shape();
-
-        let mut res = unsafe { MatrixMN::new_uninitialized_generic(nrows, ncols) };
-
-        for j in 0..ncols.value() {
-            for i in 0..nrows.value() {
-                unsafe {
-                    let a = *self.data.get_unchecked(i, j);
-                    *res.data.get_unchecked_mut(i, j) = f(a)
-                }
-            }
-        }
-
-        res
+        where DefaultAllocator: Allocator<N2, R, C> {
+        inline_map!(self, R, C, f)
     }
 
     /// Returns a matrix containing the result of `f` applied to each of its entries. Unlike `map`,

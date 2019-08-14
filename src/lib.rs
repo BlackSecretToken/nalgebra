@@ -3,9 +3,9 @@
 
 **nalgebra** is a linear algebra library written for Rust targeting:
 
-* General-purpose linear algebra (still lacks a lot of features…)
-* Real-time computer graphics.
-* Real-time computer physics.
+* General-purpose linear algebra.
+* Real time computer graphics.
+* Real time computer physics.
 
 ## Using **nalgebra**
 You will need the last stable build of the [rust compiler](https://www.rust-lang.org)
@@ -129,6 +129,59 @@ extern crate pest;
 #[macro_use]
 #[cfg(feature = "io")]
 extern crate pest_derive;
+
+macro_rules! inline_map {
+    ($me: expr, $R: ident, $C: ident, $f: expr) => {
+        // NOTE: for the pseudo-specialization to work, it is necessary
+        // to have the creation of the `res` inside of each case instead
+        // of just one before the `if`.
+        #[allow(unused_qualifications)]
+        {
+        if $R::is::<crate::U2>() && $C::is::<crate::U1>() {
+            let (nrows, ncols) = $me.data.shape();
+            let mut res = unsafe { MatrixMN::new_uninitialized_generic(nrows, ncols) };
+
+            res[0] = $f($me[0]);
+            res[1] = $f($me[1]);
+
+            res
+        } else if $R::is::<crate::U3>() && $C::is::<crate::U1>() {
+            let (nrows, ncols) = $me.data.shape();
+            let mut res = unsafe { MatrixMN::new_uninitialized_generic(nrows, ncols) };
+
+            res[0] = $f($me[0]);
+            res[1] = $f($me[1]);
+            res[2] = $f($me[2]);
+
+            res
+        } else if $R::is::<crate::U4>() && $C::is::<crate::U1>() {
+            let (nrows, ncols) = $me.data.shape();
+            let mut res = unsafe { MatrixMN::new_uninitialized_generic(nrows, ncols) };
+
+            res[0] = $f($me[0]);
+            res[1] = $f($me[1]);
+            res[2] = $f($me[2]);
+            res[3] = $f($me[3]);
+
+            res
+        } else {
+            let (nrows, ncols) = $me.data.shape();
+            let mut res = unsafe { MatrixMN::new_uninitialized_generic(nrows, ncols) };
+
+            for j in 0..ncols.value() {
+                for i in 0..nrows.value() {
+                    unsafe {
+                        let a = *$me.data.get_unchecked(i, j);
+                        *res.data.get_unchecked_mut(i, j) = $f(a)
+                    }
+                }
+            }
+
+            res
+        }
+        }
+    }
+}
 
 pub mod base;
 #[cfg(feature = "debug")]

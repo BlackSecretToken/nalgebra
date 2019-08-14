@@ -189,7 +189,8 @@ impl<N: ComplexField, R: Dim, C: Dim, S: Storage<N, R, C>> Matrix<N, R, C, S> {
     #[inline]
     pub fn normalize(&self) -> MatrixMN<N, R, C>
         where DefaultAllocator: Allocator<N, R, C> {
-        self.unscale(self.norm())
+        let inv_norm = crate::one::<N::RealField>() / self.norm();
+        inline_map!(self, R, C, |e: N| e.scale(inv_norm))
     }
 
     /// Returns a normalized version of this matrix unless its norm as smaller or equal to `eps`.

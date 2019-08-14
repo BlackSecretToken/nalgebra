@@ -473,6 +473,8 @@ macro_rules! componentwise_scalarop_impl(
 
             #[inline]
             fn $method(self, rhs: N) -> Self::Output {
+                inline_map!(self, R, C, |e: N| e.$method(rhs))
+            /*
                 let mut res = self.into_owned();
 
                 // XXX: optimize our iterator!
@@ -486,6 +488,7 @@ macro_rules! componentwise_scalarop_impl(
                 }
 
                 res
+                */
             }
         }
 
