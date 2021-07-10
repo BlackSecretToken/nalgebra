@@ -13,35 +13,23 @@ pub mod storage;
 mod alias;
 mod alias_slice;
 mod array_storage;
-mod cg;
-mod componentwise;
 #[macro_use]
 mod construction;
 mod construction_slice;
-mod conversion;
 mod edition;
 pub mod indexing;
 mod matrix;
-mod matrix_simba;
 mod matrix_slice;
-mod norm;
 mod properties;
 mod scalar;
-mod statistics;
-mod swizzle;
-mod unit;
 #[cfg(any(feature = "std", feature = "alloc"))]
 mod vec_storage;
 
 #[doc(hidden)]
 pub mod helper;
-mod interpolation;
-mod min_max;
 
 pub use self::matrix::*;
-pub use self::norm::*;
 pub use self::scalar::*;
-pub use self::unit::*;
 
 pub use self::default_allocator::*;
 pub use self::dimension::*;

@@ -5,11 +5,8 @@
 use nalgebra::allocator::Allocator;
 use nalgebra::base::dimension::*;
 use nalgebra::proptest::{DimRange, MatrixStrategy};
-use nalgebra::{
-    DMatrix, DVector, DefaultAllocator, Dim, DualQuaternion, Isometry2, Isometry3, Matrix3,
-    OMatrix, Point2, Point3, Quaternion, Rotation2, Rotation3, Scalar, Similarity3, Translation2,
-    Translation3, UnitComplex, UnitDualQuaternion, UnitQuaternion, Vector3, U3, U4,
-};
+use nalgebra::Scalar;
+use nalgebra::{DMatrix, DVector, DefaultAllocator, Dim, Matrix3, OMatrix, Vector3, U3, U4};
 use num_complex::Complex;
 use proptest::prelude::*;
 use proptest::strategy::{Strategy, ValueTree};
@@ -20,72 +17,6 @@ pub const PROPTEST_MATRIX_DIM: RangeInclusive<usize> = 1..=20;
 pub const PROPTEST_F64: RangeInclusive<f64> = -100.0..=100.0;
 
 pub use nalgebra::proptest::{matrix, vector};
-
-pub fn point2() -> impl Strategy<Value = Point2<f64>> {
-    vector2().prop_map(|v| Point2::from(v))
-}
-
-pub fn point3() -> impl Strategy<Value = Point3<f64>> {
-    vector3().prop_map(|v| Point3::from(v))
-}
-
-pub fn translation2() -> impl Strategy<Value = Translation2<f64>> {
-    vector2().prop_map(|v| Translation2::from(v))
-}
-
-pub fn translation3() -> impl Strategy<Value = Translation3<f64>> {
-    vector3().prop_map(|v| Translation3::from(v))
-}
-
-pub fn rotation2() -> impl Strategy<Value = Rotation2<f64>> {
-    PROPTEST_F64.prop_map(|v| Rotation2::new(v))
-}
-
-pub fn rotation3() -> impl Strategy<Value = Rotation3<f64>> {
-    vector3().prop_map(|v| Rotation3::new(v))
-}
-
-pub fn unit_complex() -> impl Strategy<Value = UnitComplex<f64>> {
-    PROPTEST_F64.prop_map(|v| UnitComplex::new(v))
-}
-
-pub fn isometry2() -> impl Strategy<Value = Isometry2<f64>> {
-    vector3().prop_map(|v| Isometry2::new(v.xy(), v.z))
-}
-
-pub fn isometry3() -> impl Strategy<Value = Isometry3<f64>> {
-    vector6().prop_map(|v| Isometry3::new(v.xyz(), Vector3::new(v.w, v.a, v.b)))
-}
-
-// pub fn similarity2() -> impl Strategy<Value = Similarity2<f64>> {
-//     vector4().prop_map(|v| Similarity2::new(v.xy(), v.z, v.w))
-// }
-
-pub fn similarity3() -> impl Strategy<Value = Similarity3<f64>> {
-    vector(PROPTEST_F64, Const::<7>)
-        .prop_map(|v| Similarity3::new(v.xyz(), Vector3::new(v[3], v[4], v[5]), v[6]))
-}
-
-pub fn unit_dual_quaternion() -> impl Strategy<Value = UnitDualQuaternion<f64>> {
-    isometry3().prop_map(|iso| UnitDualQuaternion::from_isometry(&iso))
-}
-
-pub fn dual_quaternion() -> impl Strategy<Value = DualQuaternion<f64>> {
-    vector(PROPTEST_F64, Const::<8>).prop_map(|v| {
-        DualQuaternion::from_real_and_dual(
-            Quaternion::new(v[0], v[1], v[2], v[3]),
-            Quaternion::new(v[4], v[5], v[6], v[7]),
-        )
-    })
-}
-
-pub fn quaternion() -> impl Strategy<Value = Quaternion<f64>> {
-    vector4().prop_map(|v| Quaternion::from(v))
-}
-
-pub fn unit_quaternion() -> impl Strategy<Value = UnitQuaternion<f64>> {
-    vector3().prop_map(|v| UnitQuaternion::new(v))
-}
 
 pub fn complex_f64() -> impl Strategy<Value = Complex<f64>> + Clone {
     vector(PROPTEST_F64, Const::<2>).prop_map(|v| Complex::new(v.x, v.y))

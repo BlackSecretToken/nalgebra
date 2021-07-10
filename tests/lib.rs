@@ -1,12 +1,7 @@
-#[cfg(not(all(
-    feature = "debug",
-    feature = "compare",
-    feature = "rand",
-    feature = "macros"
-)))]
+#[cfg(not(all(feature = "debug", feature = "compare", feature = "rand",)))]
 compile_error!(
-    "Please enable the `debug`, `compare`, `rand` and `macros` features in order to compile and run the tests.
-     Example: `cargo test --features debug,compare,rand,macros`"
+    "Please enable the `debug`, `compare`, `rand` features in order to compile and run the tests.
+     Example: `cargo test --features debug,compare,rand`"
 );
 
 #[cfg(feature = "abomonation-serialize")]
@@ -21,12 +16,6 @@ extern crate rand_package as rand;
 
 #[cfg(all(feature = "debug", feature = "compare", feature = "rand"))]
 mod core;
-#[cfg(all(feature = "debug", feature = "compare", feature = "rand"))]
-mod geometry;
-#[cfg(all(feature = "debug", feature = "compare", feature = "rand"))]
-mod linalg;
-
-#[cfg(all(feature = "debug", feature = "compare", feature = "rand"))]
 #[cfg(feature = "proptest-support")]
 mod proptest;
 

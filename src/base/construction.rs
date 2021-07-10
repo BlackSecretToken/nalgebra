@@ -23,7 +23,7 @@ use crate::base::allocator::Allocator;
 use crate::base::dimension::{Dim, DimName, Dynamic, ToTypenum};
 use crate::base::storage::Storage;
 use crate::base::{
-    ArrayStorage, Const, DefaultAllocator, Matrix, OMatrix, OVector, Scalar, Unit, Vector,
+    ArrayStorage, Const, DefaultAllocator, Matrix, OMatrix, OVector, Scalar, Vector,
 };
 
 /// When "no_unsound_assume_init" is enabled, expands to `unimplemented!()` instead of `new_uninitialized_generic().assume_init()`.
@@ -858,25 +858,6 @@ where
     }
 }
 
-// TODO(specialization): faster impls possible for D≤4 (see rand_distr::{UnitCircle, UnitSphere})
-#[cfg(feature = "rand")]
-impl<T: crate::RealField, D: DimName> Distribution<Unit<OVector<T, D>>> for Standard
-where
-    DefaultAllocator: Allocator<T, D>,
-    rand_distr::StandardNormal: Distribution<T>,
-{
-    /// Generate a uniformly distributed random unit vector.
-    #[inline]
-    fn sample<G: Rng + ?Sized>(&self, rng: &mut G) -> Unit<OVector<T, D>> {
-        Unit::new_normalize(OVector::from_distribution_generic(
-            D::name(),
-            Const::<1>,
-            &rand_distr::StandardNormal,
-            rng,
-        ))
-    }
-}
-
 /*
  *
  * Constructors for small matrices and vectors.
@@ -1091,12 +1072,6 @@ where
         res
     }
 
-    /// The column unit vector with `T::one()` as its i-th component.
-    #[inline]
-    pub fn ith_axis(i: usize) -> Unit<Self> {
-        Unit::new_unchecked(Self::ith(i, T::one()))
-    }
-
     /// The column vector with a 1 as its first component, and zero elsewhere.
     #[inline]
     pub fn x() -> Self
@@ -1179,59 +1154,5 @@ where
         }
 
         res
-    }
-
-    /// The unit column vector with a 1 as its first component, and zero elsewhere.
-    #[inline]
-    pub fn x_axis() -> Unit<Self>
-    where
-        R::Typenum: Cmp<typenum::U0, Output = Greater>,
-    {
-        Unit::new_unchecked(Self::x())
-    }
-
-    /// The unit column vector with a 1 as its second component, and zero elsewhere.
-    #[inline]
-    pub fn y_axis() -> Unit<Self>
-    where
-        R::Typenum: Cmp<typenum::U1, Output = Greater>,
-    {
-        Unit::new_unchecked(Self::y())
-    }
-
-    /// The unit column vector with a 1 as its third component, and zero elsewhere.
-    #[inline]
-    pub fn z_axis() -> Unit<Self>
-    where
-        R::Typenum: Cmp<typenum::U2, Output = Greater>,
-    {
-        Unit::new_unchecked(Self::z())
-    }
-
-    /// The unit column vector with a 1 as its fourth component, and zero elsewhere.
-    #[inline]
-    pub fn w_axis() -> Unit<Self>
-    where
-        R::Typenum: Cmp<typenum::U3, Output = Greater>,
-    {
-        Unit::new_unchecked(Self::w())
-    }
-
-    /// The unit column vector with a 1 as its fifth component, and zero elsewhere.
-    #[inline]
-    pub fn a_axis() -> Unit<Self>
-    where
-        R::Typenum: Cmp<typenum::U4, Output = Greater>,
-    {
-        Unit::new_unchecked(Self::a())
-    }
-
-    /// The unit column vector with a 1 as its sixth component, and zero elsewhere.
-    #[inline]
-    pub fn b_axis() -> Unit<Self>
-    where
-        R::Typenum: Cmp<typenum::U5, Output = Greater>,
-    {
-        Unit::new_unchecked(Self::b())
     }
 }

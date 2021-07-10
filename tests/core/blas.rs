@@ -1,26 +1,3 @@
-use na::{geometry::Quaternion, Matrix2, Vector3};
-use num_traits::{One, Zero};
-
-#[test]
-fn gemm_noncommutative() {
-    type Qf64 = Quaternion<f64>;
-    let i = Qf64::from_imag(Vector3::new(1.0, 0.0, 0.0));
-    let j = Qf64::from_imag(Vector3::new(0.0, 1.0, 0.0));
-    let k = Qf64::from_imag(Vector3::new(0.0, 0.0, 1.0));
-
-    let m1 = Matrix2::new(k, Qf64::zero(), j, i);
-    // this is the inverse of m1
-    let m2 = Matrix2::new(-k, Qf64::zero(), Qf64::one(), -i);
-
-    let mut res: Matrix2<Qf64> = Matrix2::zero();
-    res.gemm(Qf64::one(), &m1, &m2, Qf64::zero());
-    assert_eq!(res, Matrix2::identity());
-
-    let mut res: Matrix2<Qf64> = Matrix2::identity();
-    res.gemm(k, &m1, &m2, -k);
-    assert_eq!(res, Matrix2::zero());
-}
-
 #[cfg(feature = "proptest-support")]
 mod blas_proptest {
     use crate::proptest::{PROPTEST_F64, PROPTEST_MATRIX_DIM};

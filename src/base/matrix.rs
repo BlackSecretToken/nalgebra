@@ -6,7 +6,6 @@ use approx::{AbsDiffEq, RelativeEq, UlpsEq};
 use std::any::TypeId;
 use std::cmp::Ordering;
 use std::fmt;
-use std::hash::{Hash, Hasher};
 use std::marker::PhantomData;
 use std::mem;
 
@@ -16,8 +15,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 #[cfg(feature = "abomonation-serialize")]
 use abomonation::Abomonation;
 
-use simba::scalar::{ClosedAdd, ClosedMul, ClosedSub, Field, SupersetOf};
-use simba::simd::SimdPartialOrd;
+use simba::scalar::{ClosedAdd, ClosedMul, ClosedSub, Field};
 
 use crate::base::allocator::{Allocator, SameShapeAllocator, SameShapeC, SameShapeR};
 use crate::base::constraint::{DimEq, SameNumberOfColumns, SameNumberOfRows, ShapeConstraint};
@@ -28,7 +26,7 @@ use crate::base::iter::{
 use crate::base::storage::{
     ContiguousStorage, ContiguousStorageMut, Owned, SameShapeStorage, Storage, StorageMut,
 };
-use crate::base::{Const, DefaultAllocator, OMatrix, OVector, Scalar, Unit};
+use crate::base::{Const, DefaultAllocator, OMatrix, OVector, Scalar};
 use crate::{ArrayStorage, SMatrix, SimdComplexField};
 
 #[cfg(any(feature = "std", feature = "alloc"))]
@@ -139,7 +137,7 @@ pub type MatrixCross<T, R1, C1, R2, C2> =
 ///
 /// The matrix dimensions parameters `R` and `C` can either be:
 /// - type-level unsigned integer constants (e.g. `U1`, `U124`) from the `nalgebra::` root module.
-/// All numbers from 0 to 127 are defined that way.
+/// All numbers from 0 to 127 are defined that way.
 /// - type-level unsigned integer constants (e.g. `U1024`, `U10000`) from the `typenum::` crate.
 /// Using those, you will not get error messages as nice as for numbers smaller than 128 defined on
 /// the `nalgebra::` module.
@@ -723,23 +721,6 @@ impl<T: Scalar, R: Dim, C: Dim, S: Storage<T, R, C>> Matrix<T, R, C, S> {
         }
 
         res
-    }
-
-    /// Cast the components of `self` to another type.
-    ///
-    /// # Example
-    /// ```
-    /// # use nalgebra::Vector3;
-    /// let q = Vector3::new(1.0f64, 2.0, 3.0);
-    /// let q2 = q.cast::<f32>();
-    /// assert_eq!(q2, Vector3::new(1.0f32, 2.0, 3.0));
-    /// ```
-    pub fn cast<T2: Scalar>(self) -> OMatrix<T2, R, C>
-    where
-        OMatrix<T2, R, C>: SupersetOf<Self>,
-        DefaultAllocator: Allocator<T2, R, C>,
-    {
-        crate::convert(self)
     }
 
     /// Similar to `self.iter().fold(init, f)` except that `init` is replaced by a closure.
@@ -2038,108 +2019,5 @@ impl<T: Scalar + Field, S: Storage<T, U3>> Vector<T, U3, S> {
             self[0].inlined_clone(),
             T::zero(),
         )
-    }
-}
-
-impl<T: SimdComplexField, R: Dim, C: Dim, S: Storage<T, R, C>> Matrix<T, R, C, S> {
-    /// The smallest angle between two vectors.
-    #[inline]
-    #[must_use]
-    pub fn angle<R2: Dim, C2: Dim, SB>(&self, other: &Matrix<T, R2, C2, SB>) -> T::SimdRealField
-    where
-        SB: Storage<T, R2, C2>,
-        ShapeConstraint: DimEq<R, R2> + DimEq<C, C2>,
-    {
-        let prod = self.dotc(other);
-        let n1 = self.norm();
-        let n2 = other.norm();
-
-        if n1.is_zero() || n2.is_zero() {
-            T::SimdRealField::zero()
-        } else {
-            let cang = prod.simd_real() / (n1 * n2);
-            cang.simd_clamp(-T::SimdRealField::one(), T::SimdRealField::one())
-                .simd_acos()
-        }
-    }
-}
-
-impl<T, R: Dim, C: Dim, S> AbsDiffEq for Unit<Matrix<T, R, C, S>>
-where
-    T: Scalar + AbsDiffEq,
-    S: Storage<T, R, C>,
-    T::Epsilon: Copy,
-{
-    type Epsilon = T::Epsilon;
-
-    #[inline]
-    fn default_epsilon() -> Self::Epsilon {
-        T::default_epsilon()
-    }
-
-    #[inline]
-    fn abs_diff_eq(&self, other: &Self, epsilon: Self::Epsilon) -> bool {
-        self.as_ref().abs_diff_eq(other.as_ref(), epsilon)
-    }
-}
-
-impl<T, R: Dim, C: Dim, S> RelativeEq for Unit<Matrix<T, R, C, S>>
-where
-    T: Scalar + RelativeEq,
-    S: Storage<T, R, C>,
-    T::Epsilon: Copy,
-{
-    #[inline]
-    fn default_max_relative() -> Self::Epsilon {
-        T::default_max_relative()
-    }
-
-    #[inline]
-    fn relative_eq(
-        &self,
-        other: &Self,
-        epsilon: Self::Epsilon,
-        max_relative: Self::Epsilon,
-    ) -> bool {
-        self.as_ref()
-            .relative_eq(other.as_ref(), epsilon, max_relative)
-    }
-}
-
-impl<T, R: Dim, C: Dim, S> UlpsEq for Unit<Matrix<T, R, C, S>>
-where
-    T: Scalar + UlpsEq,
-    S: Storage<T, R, C>,
-    T::Epsilon: Copy,
-{
-    #[inline]
-    fn default_max_ulps() -> u32 {
-        T::default_max_ulps()
-    }
-
-    #[inline]
-    fn ulps_eq(&self, other: &Self, epsilon: Self::Epsilon, max_ulps: u32) -> bool {
-        self.as_ref().ulps_eq(other.as_ref(), epsilon, max_ulps)
-    }
-}
-
-impl<T, R, C, S> Hash for Matrix<T, R, C, S>
-where
-    T: Scalar + Hash,
-    R: Dim,
-    C: Dim,
-    S: Storage<T, R, C>,
-{
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        let (nrows, ncols) = self.shape();
-        (nrows, ncols).hash(state);
-
-        for j in 0..ncols {
-            for i in 0..nrows {
-                unsafe {
-                    self.get_unchecked((i, j)).hash(state);
-                }
-            }
-        }
     }
 }

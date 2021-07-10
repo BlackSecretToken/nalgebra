@@ -2,12 +2,12 @@
 use approx::RelativeEq;
 use num::{One, Zero};
 
-use simba::scalar::{ClosedAdd, ClosedMul, ComplexField, RealField};
+use simba::scalar::{ClosedAdd, ClosedMul, ComplexField};
 
 use crate::base::allocator::Allocator;
-use crate::base::dimension::{Dim, DimMin};
+use crate::base::dimension::Dim;
 use crate::base::storage::Storage;
-use crate::base::{DefaultAllocator, Matrix, Scalar, SquareMatrix};
+use crate::base::{DefaultAllocator, Matrix, Scalar};
 
 impl<T: Scalar, R: Dim, C: Dim, S: Storage<T, R, C>> Matrix<T, R, C, S> {
     /// The total number of elements of this matrix.
@@ -125,29 +125,5 @@ impl<T: ComplexField, R: Dim, C: Dim, S: Storage<T, R, C>> Matrix<T, R, C, S> {
         DefaultAllocator: Allocator<T, R, C> + Allocator<T, C, C>,
     {
         (self.ad_mul(self)).is_identity(eps)
-    }
-}
-
-impl<T: RealField, D: Dim, S: Storage<T, D, D>> SquareMatrix<T, D, S>
-where
-    DefaultAllocator: Allocator<T, D, D>,
-{
-    /// Checks that this matrix is orthogonal and has a determinant equal to 1.
-    #[inline]
-    #[must_use]
-    pub fn is_special_orthogonal(&self, eps: T) -> bool
-    where
-        D: DimMin<D, Output = D>,
-        DefaultAllocator: Allocator<(usize, usize), D>,
-    {
-        self.is_square() && self.is_orthogonal(eps) && self.determinant() > T::zero()
-    }
-
-    /// Returns `true` if this matrix is invertible.
-    #[inline]
-    #[must_use]
-    pub fn is_invertible(&self) -> bool {
-        // TODO: improve this?
-        self.clone_owned().try_inverse().is_some()
     }
 }

@@ -26,21 +26,7 @@ Most useful functionalities of **nalgebra** are grouped in the root module `nalg
 However, the recommended way to use **nalgebra** is to import types and traits
 explicitly, and call free-functions using the `na::` prefix:
 
-```
-#[macro_use]
-extern crate approx; // For the macro relative_eq!
-extern crate nalgebra as na;
-use na::{Vector3, Rotation3};
 
-fn main() {
-    let axis  = Vector3::x_axis();
-    let angle = 1.57;
-    let b     = Rotation3::from_axis_angle(&axis, angle);
-
-    relative_eq!(b.axis().unwrap(), axis);
-    relative_eq!(b.angle(), angle);
-}
-```
 
 
 ## Features
@@ -114,38 +100,21 @@ extern crate pest;
 extern crate pest_derive;
 
 pub mod base;
-#[cfg(feature = "debug")]
-pub mod debug;
-pub mod geometry;
-#[cfg(feature = "io")]
-pub mod io;
-pub mod linalg;
-#[cfg(feature = "proptest-support")]
-pub mod proptest;
-#[cfg(feature = "sparse")]
-pub mod sparse;
-mod third_party;
 
 pub use crate::base::*;
-pub use crate::geometry::*;
-pub use crate::linalg::*;
-#[cfg(feature = "sparse")]
-pub use crate::sparse::*;
+#[cfg(feature = "proptest-support")]
+pub mod proptest;
 #[cfg(feature = "std")]
 #[deprecated(
     note = "The 'core' module is being renamed to 'base' to avoid conflicts with the 'core' crate."
 )]
 pub use base as core;
 
-#[cfg(feature = "macros")]
-pub use nalgebra_macros::{dmatrix, dvector, matrix, point, vector};
-
 use simba::scalar::SupersetOf;
 use std::cmp::{self, Ordering, PartialOrd};
 
 use num::{One, Signed, Zero};
 
-use base::allocator::Allocator;
 pub use num_complex::Complex;
 pub use simba::scalar::{
     ClosedAdd, ClosedDiv, ClosedMul, ClosedSub, ComplexField, Field, RealField,
@@ -252,42 +221,6 @@ pub fn abs<T: Signed>(a: &T) -> T {
     a.abs()
 }
 
-/// Returns the infimum of `a` and `b`.
-#[deprecated(note = "use the inherent method `Matrix::inf` instead")]
-#[inline]
-pub fn inf<T, R: Dim, C: Dim>(a: &OMatrix<T, R, C>, b: &OMatrix<T, R, C>) -> OMatrix<T, R, C>
-where
-    T: Scalar + SimdPartialOrd,
-    DefaultAllocator: Allocator<T, R, C>,
-{
-    a.inf(b)
-}
-
-/// Returns the supremum of `a` and `b`.
-#[deprecated(note = "use the inherent method `Matrix::sup` instead")]
-#[inline]
-pub fn sup<T, R: Dim, C: Dim>(a: &OMatrix<T, R, C>, b: &OMatrix<T, R, C>) -> OMatrix<T, R, C>
-where
-    T: Scalar + SimdPartialOrd,
-    DefaultAllocator: Allocator<T, R, C>,
-{
-    a.sup(b)
-}
-
-/// Returns simultaneously the infimum and supremum of `a` and `b`.
-#[deprecated(note = "use the inherent method `Matrix::inf_sup` instead")]
-#[inline]
-pub fn inf_sup<T, R: Dim, C: Dim>(
-    a: &OMatrix<T, R, C>,
-    b: &OMatrix<T, R, C>,
-) -> (OMatrix<T, R, C>, OMatrix<T, R, C>)
-where
-    T: Scalar + SimdPartialOrd,
-    DefaultAllocator: Allocator<T, R, C>,
-{
-    a.inf_sup(b)
-}
-
 /// Compare `a` and `b` using a partial ordering relation.
 #[inline]
 pub fn partial_cmp<T: PartialOrd>(a: &T, b: &T) -> Option<Ordering> {
@@ -372,53 +305,6 @@ pub fn partial_sort2<'a, T: PartialOrd>(a: &'a T, b: &'a T) -> Option<(&'a T, &'
     } else {
         None
     }
-}
-
-/*
- *
- * Point operations.
- *
- */
-/// The center of two points.
-///
-/// # See also:
-///
-/// * [distance](fn.distance.html)
-/// * [distance_squared](fn.distance_squared.html)
-#[inline]
-pub fn center<T: SimdComplexField, const D: usize>(
-    p1: &Point<T, D>,
-    p2: &Point<T, D>,
-) -> Point<T, D> {
-    ((p1.coords + p2.coords) * convert::<_, T>(0.5)).into()
-}
-
-/// The distance between two points.
-///
-/// # See also:
-///
-/// * [center](fn.center.html)
-/// * [distance_squared](fn.distance_squared.html)
-#[inline]
-pub fn distance<T: SimdComplexField, const D: usize>(
-    p1: &Point<T, D>,
-    p2: &Point<T, D>,
-) -> T::SimdRealField {
-    (p2.coords - p1.coords).norm()
-}
-
-/// The squared distance between two points.
-///
-/// # See also:
-///
-/// * [center](fn.center.html)
-/// * [distance](fn.distance.html)
-#[inline]
-pub fn distance_squared<T: SimdComplexField, const D: usize>(
-    p1: &Point<T, D>,
-    p2: &Point<T, D>,
-) -> T::SimdRealField {
-    (p2.coords - p1.coords).norm_squared()
 }
 
 /*
