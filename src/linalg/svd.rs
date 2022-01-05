@@ -10,7 +10,7 @@ use crate::base::{DefaultAllocator, Matrix, Matrix2x3, OMatrix, OVector, Vector2
 use crate::constraint::{SameNumberOfRows, ShapeConstraint};
 use crate::dimension::{Dim, DimDiff, DimMin, DimMinimum, DimSub, U1};
 use crate::storage::Storage;
-use crate::{Matrix2, Matrix3, RawStorage, U2, U3};
+use crate::{Matrix2, Matrix3, RawStorage, StorageMut, U2, U3};
 use simba::scalar::{ComplexField, RealField};
 
 use crate::linalg::givens::GivensRotation;
@@ -663,6 +663,38 @@ where
             _ => None,
         }
     }
+
+    /// Completes the set of right singular vectors.
+    pub fn v_t_full(&self, eps: T::RealField) -> Option<OMatrix<T, C, C>>
+    where
+        DefaultAllocator: Allocator<T, C, C>
+            + Allocator<T, DimMinimum<R, C>, C>
+            + Allocator<T, C, DimMinimum<R, C>>,
+    {
+        if let Some(v_t) = self.v_t.as_ref() {
+            let ncols = v_t.data.shape().1;
+            let mut part1 = v_t.transpose();
+            let mut part2 = OMatrix::identity_generic(ncols, ncols);
+            orthogonalize_rhs_columns(&mut part1, &mut part2, eps.clone());
+            let mut result = OMatrix::identity_generic(ncols, ncols);
+            let mut curr = 0;
+
+            for col in part2.column_iter() {
+                let sq_norm = col.norm_squared();
+                if sq_norm > eps.clone() * eps.clone() {
+                    result
+                        .column_mut(curr)
+                        .axpy(T::one().unscale(sq_norm.sqrt()), &col, T::zero());
+                    curr += 1;
+                }
+            }
+
+            result.transpose_mut();
+            Some(result)
+        } else {
+            None
+        }
+    }
 }
 
 impl<T: ComplexField, R: DimMin<C>, C: Dim> SVD<T, R, C>
@@ -900,4 +932,43 @@ fn compute_2x2_uptrig_svd<T: RealField>(
     }
 
     (u, Vector2::new(v1, v2), v_t)
+}
+
+fn orthogonalize_rhs_columns<T, R, C1, C2, S1, S2>(
+    a: &mut Matrix<T, R, C1, S1>,
+    rhs: &mut Matrix<T, R, C2, S2>,
+    eps: T::RealField,
+) where
+    T: ComplexField,
+    R: Dim,
+    C1: Dim,
+    C2: Dim,
+    S1: StorageMut<T, R, C1>,
+    S2: StorageMut<T, R, C2>,
+{
+    for i in 0..a.ncols() {
+        let dot_ii = a.column(i).norm_squared();
+        if dot_ii > eps.clone() * eps.clone() {
+            let inv_dot_ii = T::one().unscale(dot_ii);
+
+            let col_i = a.column(i);
+            for mut col_j in rhs.column_iter_mut() {
+                let dot_ij = col_i.dot(&col_j);
+                col_j.axpy(-dot_ij * inv_dot_ii.clone(), &col_i, T::one());
+            }
+        }
+    }
+
+    for i in 0..rhs.ncols() {
+        let dot_ii = rhs.column(i).norm_squared();
+        if dot_ii > eps.clone() * eps.clone() {
+            let inv_dot_ii = T::one().unscale(dot_ii);
+
+            for j in i + 1..rhs.ncols() {
+                let (col_i, mut col_j) = rhs.columns_range_pair_mut(i, j);
+                let dot_ij = col_i.dot(&col_j);
+                col_j.axpy(-dot_ij * inv_dot_ii.clone(), &col_i, T::one());
+            }
+        }
+    }
 }
